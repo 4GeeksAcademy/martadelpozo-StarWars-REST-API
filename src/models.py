@@ -8,7 +8,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(80), unique=False, nullable=False)
     is_active = db.Column(db.Boolean(), unique=False, nullable=False)
-    favorites = db.relationship('Favorite', backref='user', lazy=True)
+    favorites = db.relationship('Favorite', back_populates='user')
 
 
     def __repr__(self):
@@ -19,8 +19,9 @@ class User(db.Model):
             "id": self.id,
             "username": self.username,
             "email": self.email,
-            # do not serialize the password, its a security breach
+            "favorites": [favorite.serialize() for favorite in self.favorites],
         }
+  
 
 class Planet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -33,9 +34,11 @@ class Planet(db.Model):
     climate = db.Column(db.String(50))
     terrain = db.Column(db.String(50))
     surface_water = db.Column(db.Integer)
+    favorites = db.relationship('Favorite', back_populates='planet')
 
     def __repr__(self):
-        return '<Planet %r>' % self.id
+        return '{}'.format(self.name)
+
 
     def serialize(self):
         return {
@@ -61,9 +64,10 @@ class People(db.Model):
     eye_color = db.Column(db.String(50))
     birth_year = db.Column(db.String(10))
     gender = db.Column(db.String(20))
+    favorites = db.relationship('Favorite', back_populates='people')
 
     def __repr__(self):
-        return '<People %r>' % self.id
+        return '{}'.format(self.name)
 
     def serialize(self):
         return {
@@ -83,10 +87,20 @@ class Favorite(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     planet_id = db.Column(db.Integer, db.ForeignKey('planet.id'))
     people_id = db.Column(db.Integer, db.ForeignKey('people.id'))
+    user = db.relationship('User', back_populates='favorites')
+    planet = db.relationship('Planet', back_populates='favorites')
+    people = db.relationship('People', back_populates='favorites')
+
+    def __repr__(self):
+        return 'Planet: {}, People: {}'.format(self.planet_id, self.people_id)
 
     def serialize(self):
         return {
             "id": self.id,
+            "user_id": self.user_id,
             "planet_id": self.planet_id,
             "people_id": self.people_id,
         }
+    
+    
+
